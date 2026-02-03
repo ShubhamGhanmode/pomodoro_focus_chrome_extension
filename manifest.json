@@ -1,0 +1,74 @@
+﻿{
+  "manifest_version": 3,
+  "name": "Pomodoro + Allowlist Focus",
+  "version": "2.1.0",
+  "description": "Draggable Pomodoro timer overlay with allowlist-only browsing during focus sessions.",
+  "permissions": [
+    "storage",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
+    "webNavigation",
+    "notifications",
+    "alarms"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "sw.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "shared.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "warning.html",
+        "warning.js",
+        "warning.css",
+        "shared.js",
+        "sounds/chime.mp3",
+        "sounds/bell.mp3",
+        "sounds/digital.mp3",
+        "sounds/gentle.mp3"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "action": {
+    "default_title": "Pomodoro Focus",
+    "default_popup": "popup.html"
+  },
+  "commands": {
+    "toggle-timer": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Start/Pause the Pomodoro timer"
+    },
+    "stop-session": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+U",
+        "mac": "Command+Shift+U"
+      },
+      "description": "Stop the current session"
+    }
+  },
+  "icons": {
+    "16": "icons/16.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  }
+}

@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pomodoro Focus</title>
+    <link rel="stylesheet" href="popup.css" />
+</head>
+
+<body>
+    <div class="popup" id="popup">
+        <!-- Header -->
+        <header class="header">
+            <div class="brand">
+                <span class="brand-icon">🍅</span>
+                <span class="brand-text">Pomodoro Focus</span>
+                <span class="sync-indicator" id="syncIndicator" title="Settings sync across devices">⟳</span>
+            </div>
+            <button class="icon-btn" id="settingsToggle" aria-label="Toggle settings" title="Settings">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                </svg>
+                <!-- <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                        d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42">
+                    </path>
+                </svg> -->
+            </button>
+        </header>
+
+        <!-- Timer Section -->
+        <section class="timer-section" id="timerSection">
+            <div class="mode-indicator" id="modeIndicator">
+                <span class="mode-dot"></span>
+                <span class="mode-text" id="modeText">Idle</span>
+            </div>
+
+            <div class="timer-display" id="timerDisplay">
+                <span class="timer-time" id="timerTime">25:00</span>
+                <div class="timer-ring">
+                    <svg viewBox="0 0 100 100">
+                        <circle class="ring-bg" cx="50" cy="50" r="45"></circle>
+                        <circle class="ring-progress" id="ringProgress" cx="50" cy="50" r="45"></circle>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="task-display" id="taskDisplay">
+                <input type="text" id="taskInput" placeholder="What are you working on?" maxlength="50"
+                    aria-label="Current task" />
+            </div>
+
+            <div class="pomodoro-count" id="pomodoroCount">
+                <span class="count-label">Completed:</span>
+                <span class="count-dots" id="countDots"></span>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-secondary" id="skipBtn" aria-label="Skip segment" title="Skip to next segment">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"></path>
+                    </svg>
+                </button>
+                <button class="btn btn-primary" id="mainBtn" aria-label="Start timer">
+                    Start
+                </button>
+                <button class="btn btn-secondary" id="stopBtn" aria-label="Stop session" title="Stop session">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                    </svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- Stats Section -->
+        <section class="stats-section" id="statsSection">
+            <h3 class="section-title">Today's Progress</h3>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="todayPomodoros">0</div>
+                    <div class="stat-label">Pomodoros</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="todayMinutes">0</div>
+                    <div class="stat-label">Minutes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="streakDays">0</div>
+                    <div class="stat-label">Day Streak</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalPomodoros">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+            </div>
+
+            <div class="goal-section">
+                <div class="goal-header">
+                    <span>Daily Goal</span>
+                    <span id="goalProgress">0/8</span>
+                </div>
+                <div class="goal-bar">
+                    <div class="goal-fill" id="goalFill"></div>
+                </div>
+            </div>
+
+            <div class="weekly-chart" id="weeklyChart">
+                <h4 class="chart-title">This Week</h4>
+                <div class="chart-bars" id="chartBars"></div>
+                <div class="chart-labels" id="chartLabels"></div>
+            </div>
+
+            <!-- Task History -->
+            <div class="task-history-section">
+                <div class="history-header">
+                    <h4 class="chart-title">Task History</h4>
+                    <div class="history-actions">
+                        <button class="btn-icon-small" id="exportHistoryBtn" title="Export to JSON">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </button>
+                        <button class="btn-icon-small" id="clearHistoryBtn" title="Clear history">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path
+                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                </path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="history-list" id="historyList">
+                    <div class="history-empty">No tasks completed yet</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section class="settings-section hidden" id="settingsSection">
+            <h3 class="section-title">Settings</h3>
+
+            <!-- Template Selector -->
+            <div class="settings-group template-group">
+                <label class="setting-label">
+                    <span>Template</span>
+                    <select id="templateSelect" aria-label="Timer template">
+                        <option value="standard">Standard (25/5/15)</option>
+                        <option value="deep">Deep Work (50/10/30)</option>
+                        <option value="quick">Quick Tasks (15/3/10)</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="settings-group">
+                <label class="setting-label">
+                    <span>Work Duration</span>
+                    <div class="setting-input">
+                        <input type="number" id="workMinutes" min="1" max="120" value="25"
+                            aria-label="Work duration in minutes" />
+                        <span class="input-suffix">min</span>
+                    </div>
+                </label>
+
+                <label class="setting-label">
+                    <span>Short Break</span>
+                    <div class="setting-input">
+                        <input type="number" id="breakMinutes" min="1" max="60" value="5"
+                            aria-label="Break duration in minutes" />
+                        <span class="input-suffix">min</span>
+                    </div>
+                </label>
+
+                <label class="setting-label">
+                    <span>Long Break</span>
+                    <div class="setting-input">
+                        <input type="number" id="longBreakMinutes" min="1" max="60" value="15"
+                            aria-label="Long break duration in minutes" />
+                        <span class="input-suffix">min</span>
+                    </div>
+                </label>
+
+                <label class="setting-label">
+                    <span>Long Break After</span>
+                    <div class="setting-input">
+                        <input type="number" id="pomodorosUntilLongBreak" min="2" max="10" value="4"
+                            aria-label="Pomodoros until long break" />
+                        <span class="input-suffix">🍅</span>
+                    </div>
+                </label>
+
+                <label class="setting-label">
+                    <span>Daily Goal</span>
+                    <div class="setting-input">
+                        <input type="number" id="dailyGoal" min="1" max="20" value="8"
+                            aria-label="Daily pomodoro goal" />
+                        <span class="input-suffix">🍅</span>
+                    </div>
+                </label>
+            </div>
+
+            <div class="settings-group">
+                <!-- Sound Selection -->
+                <label class="setting-label">
+                    <span>Notification Sound</span>
+                    <div class="sound-selector">
+                        <select id="soundSelect" aria-label="Notification sound">
+                            <option value="chime">Chime</option>
+                            <option value="bell">Bell</option>
+                            <option value="digital">Digital</option>
+                            <option value="gentle">Gentle</option>
+                        </select>
+                        <button class="btn-icon-small" id="previewSoundBtn" title="Preview sound">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                                <path fill="none" stroke="currentColor" stroke-width="2"
+                                    d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </label>
+
+                <label class="setting-toggle">
+                    <span>Sound Notifications</span>
+                    <input type="checkbox" id="soundEnabled" checked aria-label="Enable sound notifications" />
+                    <span class="toggle-switch"></span>
+                </label>
+
+                <label class="setting-toggle">
+                    <span>Desktop Notifications</span>
+                    <input type="checkbox" id="notificationsEnabled" checked
+                        aria-label="Enable desktop notifications" />
+                    <span class="toggle-switch"></span>
+                </label>
+
+                <label class="setting-toggle">
+                    <span>Auto-start Breaks</span>
+                    <input type="checkbox" id="autoStartBreaks" aria-label="Auto-start breaks" />
+                    <span class="toggle-switch"></span>
+                </label>
+
+                <label class="setting-toggle">
+                    <span>Auto-start Work</span>
+                    <input type="checkbox" id="autoStartWork" aria-label="Auto-start work sessions" />
+                    <span class="toggle-switch"></span>
+                </label>
+
+                <label class="setting-toggle">
+                    <span>Remember Allowlist</span>
+                    <input type="checkbox" id="persistAllowlist" aria-label="Persist allowlist between sessions" />
+                    <span class="toggle-switch"></span>
+                </label>
+
+                <label class="setting-toggle">
+                    <span>Strict Mode</span>
+                    <input type="checkbox" id="strictMode" aria-label="Prevent stopping during work" />
+                    <span class="toggle-switch"></span>
+                </label>
+            </div>
+
+            <div class="settings-group">
+                <label class="setting-label">
+                    <span>Theme</span>
+                    <select id="themeSelect" aria-label="Color theme">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="auto">System</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="allowlist-section">
+                <h4>Saved Allowlist</h4>
+                <div class="allowlist-list" id="allowlistList"></div>
+                <div class="allowlist-add">
+                    <input type="text" id="allowlistInput" placeholder="Add domain (e.g., github.com)"
+                        aria-label="Add domain to allowlist" />
+                    <button class="btn btn-small" id="allowlistAddBtn">Add</button>
+                </div>
+            </div>
+
+            <button class="btn btn-text" id="resetStats">Reset Statistics</button>
+        </section>
+
+        <!-- Keyboard Shortcuts -->
+        <footer class="shortcuts">
+            <span class="shortcut"><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> Toggle</span>
+            <span class="shortcut"><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> Stop</span>
+        </footer>
+    </div>
+    <script src="shared.js"></script>
+    <script src="popup.js"></script>
+</body>
+
+</html>
