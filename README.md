@@ -212,7 +212,7 @@ Access your productivity stats by clicking the extension icon:
 
 ## 🔊 Customizing Sounds
 
-Replace `sounds/chime.mp3` with your preferred notification sound:
+Add your preferred notification mp3 files to the `sounds/` directory:
 
 | Requirement | Specification |
 |:-----------:|:-------------:|
@@ -220,7 +220,7 @@ Replace `sounds/chime.mp3` with your preferred notification sound:
 | Duration | 1-3 seconds |
 | Volume | Moderate |
 
-**Available sounds:** Chime, Bell, Digital, Gentle
+**Default sound:** Chime
 
 ---
 
@@ -239,10 +239,7 @@ promodoro_chrome/
 ├── 📄 warning.css        # Warning page styles
 ├── 📄 warning.js         # Warning page logic
 ├── 📂 sounds/
-│   ├── 🔊 chime.mp3
-│   ├── 🔊 bell.mp3
-│   ├── 🔊 digital.mp3
-│   └── 🔊 gentle.mp3
+│   └── 🔊 chime.mp3
 ├── 📂 icons/
 │   ├── 🖼️ 16.png
 │   ├── 🖼️ 48.png
