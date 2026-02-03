@@ -121,7 +121,7 @@
 
 ```bash
 # Clone or download the repository
-git clone https://github.com/your-username/promodoro_chrome.git
+git clone https://github.com/ShubhamGhanmode/pomodoro_focus_chrome_extension
 ```
 
 1. Open `chrome://extensions` in Chrome
