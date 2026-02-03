@@ -222,6 +222,8 @@ Add your preferred notification mp3 files to the `sounds/` directory:
 
 **Default sound:** Chime
 
+> **Once the files are added to the directory, the notification sound can the  be changed in settings menu of the extension.**
+
 ---
 
 ## 📁 Project Structure
