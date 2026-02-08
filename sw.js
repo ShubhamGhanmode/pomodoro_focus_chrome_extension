@@ -16,6 +16,7 @@ const {
   DEFAULT_SETTINGS,
   DEFAULT_STATS,
   MAX_TASK_HISTORY,
+  getDateKey,
   getTodayKey,
   normalizeDomain
 } = globalThis.POMODORO_SHARED;
@@ -66,6 +67,10 @@ function normalizeSettings(settings) {
 
 function normalizeStats(stats) {
   return { ...DEFAULT_STATS, ...(stats || {}) };
+}
+
+function isStrictModeStopBlocked(state, settings) {
+  return Boolean(state?.active && settings?.strictMode && state?.mode === "work");
 }
 
 // State management (local storage)
@@ -198,7 +203,7 @@ async function recordCompletedPomodoro(minutes, taskName) {
   // Update streak
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayKey = yesterday.toISOString().slice(0, 10);
+  const yesterdayKey = getDateKey(yesterday);
 
   if (stats.lastActiveDate === yesterdayKey || stats.lastActiveDate === today) {
     if (stats.lastActiveDate !== today) {
@@ -212,7 +217,7 @@ async function recordCompletedPomodoro(minutes, taskName) {
   // Clean old stats (keep 30 days)
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 30);
-  const cutoffKey = cutoff.toISOString().slice(0, 10);
+  const cutoffKey = getDateKey(cutoff);
   for (const key of Object.keys(stats.dailyStats)) {
     if (key < cutoffKey) delete stats.dailyStats[key];
   }
@@ -316,19 +321,100 @@ async function stopAlarm() {
   await chrome.alarms.clear(ALARM_NAME);
 }
 
+async function stopSession(state, settings, senderTabId = null) {
+  if (!state.active) {
+    return state;
+  }
+
+  // Save allowlist if enabled
+  if (settings.persistAllowlist && state.allowlist.length > 0) {
+    const saved = await getSavedAllowlist();
+    const merged = normalizeAllowlist([...saved, ...state.allowlist]);
+    await setSavedAllowlist(merged);
+  }
+
+  state.active = false;
+  state.endAt = null;
+  state.pausedRemainingMs = null;
+  state.allowlist = [];
+  state.completedPomodoros = 0;
+  state.currentTask = "";
+
+  const next = await setState(state);
+  await rebuildDnrRule(next);
+  await updateBadge(next);
+  await stopAlarm();
+
+  if (typeof senderTabId === "number") {
+    await clearBlockedTarget(senderTabId);
+  }
+
+  return next;
+}
+
+async function getPreferredSoundTabId(sourceTabId = null) {
+  if (typeof sourceTabId === "number") {
+    return sourceTabId;
+  }
+
+  try {
+    const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    const activeTabId = tabs?.[0]?.id;
+    return typeof activeTabId === "number" ? activeTabId : null;
+  } catch {
+    return null;
+  }
+}
+
+async function broadcastStateUpdate(nextState, playSoundTabId = null) {
+  try {
+    const tabs = await chrome.tabs.query({});
+    for (const tab of tabs) {
+      if (typeof tab.id !== "number") continue;
+      try {
+        await chrome.tabs.sendMessage(tab.id, {
+          type: "STATE_UPDATED",
+          state: nextState,
+          playSound: playSoundTabId != null && tab.id === playSoundTabId
+        });
+      } catch {
+        // Tab might not have content script
+      }
+    }
+  } catch {
+    // Ignore broadcast errors
+  }
+}
+
+let segmentAdvanceInFlight = null;
+
+async function advanceSegmentIfDue(sourceTabId = null) {
+  if (segmentAdvanceInFlight) {
+    return segmentAdvanceInFlight;
+  }
+
+  segmentAdvanceInFlight = (async () => {
+    const state = await getState();
+    await updateBadge(state);
+
+    if (!(state.active && state.endAt && state.endAt <= Date.now() && state.pausedRemainingMs == null)) {
+      return state;
+    }
+
+    return handleSegmentEnd(state, sourceTabId);
+  })().finally(() => {
+    segmentAdvanceInFlight = null;
+  });
+
+  return segmentAdvanceInFlight;
+}
+
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name !== ALARM_NAME) return;
-
-  const state = await getState();
-  await updateBadge(state);
-
-  // Check if segment ended
-  if (state.active && state.endAt && state.endAt <= Date.now() && !state.pausedRemainingMs) {
-    await handleSegmentEnd(state);
-  }
+  await advanceSegmentIfDue();
 });
 
-async function handleSegmentEnd(state) {
+async function handleSegmentEnd(state, sourceTabId = null) {
   const settings = await getSettings();
   const wasWork = state.mode === "work";
 
@@ -339,8 +425,9 @@ async function handleSegmentEnd(state) {
     state.totalCompletedToday++;
 
     // Determine break type
-    const isLongBreak = state.completedPomodoros % settings.pomodorosUntilLongBreak === 0;
-    const breakMinutes = isLongBreak ? settings.longBreakMinutes : settings.breakMinutes;
+    const pomoCycleLength = state.pomodorosUntilLongBreak || settings.pomodorosUntilLongBreak;
+    const isLongBreak = state.completedPomodoros % pomoCycleLength === 0;
+    const breakMinutes = isLongBreak ? state.longBreakMinutes : state.breakMinutes;
 
     state.mode = "break";
     state.endAt = Date.now() + breakMinutes * 60 * 1000;
@@ -355,12 +442,12 @@ async function handleSegmentEnd(state) {
   } else {
     // Break ended
     state.mode = "work";
-    state.endAt = Date.now() + settings.workMinutes * 60 * 1000;
+    state.endAt = Date.now() + state.workMinutes * 60 * 1000;
 
     await showNotification("⏰ Break Over!", "Time to focus! Let's start another pomodoro.");
 
     if (!settings.autoStartWork) {
-      state.pausedRemainingMs = settings.workMinutes * 60 * 1000;
+      state.pausedRemainingMs = state.workMinutes * 60 * 1000;
       state.endAt = null;
     }
   }
@@ -368,19 +455,9 @@ async function handleSegmentEnd(state) {
   const next = await setState(state);
   await updateBadge(next);
 
-  // Broadcast state change to all tabs
-  try {
-    const tabs = await chrome.tabs.query({});
-    for (const tab of tabs) {
-      try {
-        await chrome.tabs.sendMessage(tab.id, { type: "STATE_UPDATED", state: next, playSound: true });
-      } catch {
-        // Tab might not have content script
-      }
-    }
-  } catch {
-    // Ignore broadcast errors
-  }
+  const playSoundTabId = await getPreferredSoundTabId(sourceTabId);
+  await broadcastStateUpdate(next, playSoundTabId);
+  return next;
 }
 
 chrome.runtime.onInstalled.addListener(async () => {
@@ -427,6 +504,7 @@ chrome.commands.onCommand.addListener(async (command) => {
       state.workMinutes = settings.workMinutes;
       state.breakMinutes = settings.breakMinutes;
       state.longBreakMinutes = settings.longBreakMinutes;
+      state.pomodorosUntilLongBreak = settings.pomodorosUntilLongBreak;
       state.endAt = now + settings.workMinutes * 60 * 1000;
       state.pausedRemainingMs = null;
       state.completedPomodoros = 0;
@@ -451,26 +529,10 @@ chrome.commands.onCommand.addListener(async (command) => {
     }
   } else if (command === "stop-session") {
     if (state.active) {
-      const settings = await getSettings();
-
-      // Save allowlist if enabled
-      if (settings.persistAllowlist && state.allowlist.length > 0) {
-        const saved = await getSavedAllowlist();
-        const merged = normalizeAllowlist([...saved, ...state.allowlist]);
-        await setSavedAllowlist(merged);
+      if (isStrictModeStopBlocked(state, settings)) {
+        return;
       }
-
-      state.active = false;
-      state.endAt = null;
-      state.pausedRemainingMs = null;
-      state.allowlist = [];
-      state.completedPomodoros = 0;
-      state.currentTask = "";
-
-      const next = await setState(state);
-      await rebuildDnrRule(next);
-      await updateBadge(next);
-      await stopAlarm();
+      await stopSession(state, settings);
     }
   }
 });
@@ -599,6 +661,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       state.workMinutes = workMinutes;
       state.breakMinutes = breakMinutes;
       state.longBreakMinutes = longBreakMinutes;
+      state.pomodorosUntilLongBreak = settings.pomodorosUntilLongBreak;
       state.endAt = now + workMinutes * 60 * 1000;
       state.pausedRemainingMs = null;
       state.completedPomodoros = 0;
@@ -630,25 +693,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
 
     if (msg?.type === "STOP_SESSION") {
-      // Save allowlist if enabled
-      if (settings.persistAllowlist && state.allowlist.length > 0) {
-        const saved = await getSavedAllowlist();
-        const merged = normalizeAllowlist([...saved, ...state.allowlist]);
-        await setSavedAllowlist(merged);
+      if (isStrictModeStopBlocked(state, settings)) {
+        return {
+          ok: false,
+          error: "Strict mode prevents stopping during an active work segment.",
+          state
+        };
       }
-
-      state.active = false;
-      state.endAt = null;
-      state.pausedRemainingMs = null;
-      state.allowlist = [];
-      state.completedPomodoros = 0;
-      state.currentTask = "";
-
-      const next = await setState(state);
-      await rebuildDnrRule(next);
-      await updateBadge(next);
-      await stopAlarm();
-      if (sender.tab?.id != null) await clearBlockedTarget(sender.tab.id);
+      const next = await stopSession(state, settings, sender.tab?.id);
       return { ok: true, state: next };
     }
 
@@ -673,22 +725,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
 
     if (msg?.type === "ADVANCE_SEGMENT") {
-      if (state.active) {
-        await handleSegmentEnd(state);
-        const updatedState = await getState();
-        return { ok: true, state: updatedState };
-      }
-      return { ok: true, state };
+      const next = await advanceSegmentIfDue(sender.tab?.id);
+      return { ok: true, state: next };
     }
 
     if (msg?.type === "SKIP_SEGMENT") {
       if (state.active) {
         const wasWork = state.mode === "work";
-        const isLongBreak = wasWork && (state.completedPomodoros + 1) % settings.pomodorosUntilLongBreak === 0;
+        const pomoCycleLength = state.pomodorosUntilLongBreak || settings.pomodorosUntilLongBreak;
+        const isLongBreak = wasWork && (state.completedPomodoros + 1) % pomoCycleLength === 0;
 
         if (wasWork) {
           state.completedPomodoros++;
-          const breakMinutes = isLongBreak ? settings.longBreakMinutes : settings.breakMinutes;
+          const breakMinutes = isLongBreak ? state.longBreakMinutes : state.breakMinutes;
           state.mode = "break";
           state.endAt = Date.now() + breakMinutes * 60 * 1000;
           state.pausedRemainingMs = null;

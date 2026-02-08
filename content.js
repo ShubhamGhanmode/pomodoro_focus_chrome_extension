@@ -1,66 +1,66 @@
 (() => {
-// Use shared constants from shared.js (loaded via manifest content_scripts)
-const {
-  STORAGE_KEY,
-  SETTINGS_KEY,
-  POS_KEY,
-  WIDGET_STATE_KEY,
-  AVAILABLE_SOUNDS,
-  DEFAULT_STATE,
-  DEFAULT_SETTINGS,
-  DEFAULT_WIDGET_STATE,
-  RING_CIRCUMFERENCE,
-  formatMs,
-  clamp,
-  normalizeState,
-  normalizeSettings
-} = globalThis.POMODORO_SHARED;
+  // Use shared constants from shared.js (loaded via manifest content_scripts)
+  const {
+    STORAGE_KEY,
+    SETTINGS_KEY,
+    POS_KEY,
+    WIDGET_STATE_KEY,
+    AVAILABLE_SOUNDS,
+    DEFAULT_STATE,
+    DEFAULT_SETTINGS,
+    DEFAULT_WIDGET_STATE,
+    RING_CIRCUMFERENCE,
+    formatMs,
+    clamp,
+    normalizeState,
+    normalizeSettings
+  } = globalThis.POMODORO_SHARED;
 
-const ROOT_ID = "pomodoro-focus-root";
+  const ROOT_ID = "pomodoro-focus-root";
 
-async function loadPosition() {
-  const data = await chrome.storage.local.get(POS_KEY);
-  return data[POS_KEY] || { x: 16, y: 16 };
-}
-
-async function savePosition(pos) {
-  await chrome.storage.local.set({ [POS_KEY]: pos });
-}
-
-async function loadWidgetState() {
-  const data = await chrome.storage.local.get(WIDGET_STATE_KEY);
-  return { ...DEFAULT_WIDGET_STATE, ...(data[WIDGET_STATE_KEY] || {}) };
-}
-
-async function saveWidgetState(state) {
-  await chrome.storage.local.set({ [WIDGET_STATE_KEY]: state });
-}
-
-function playNotificationSound(selectedSound = "chime") {
-  try {
-    const sound = AVAILABLE_SOUNDS.find(s => s.id === selectedSound) || AVAILABLE_SOUNDS[0];
-    const audio = new Audio(chrome.runtime.getURL(sound.file));
-    audio.volume = 0.5;
-    audio.play().catch(() => { });
-  } catch {
-    // Ignore sound errors
+  async function loadPosition() {
+    const data = await chrome.storage.local.get(POS_KEY);
+    return data[POS_KEY] || { x: 16, y: 16 };
   }
-}
 
-function injectWidget() {
-  if (document.getElementById(ROOT_ID)) return null;
+  async function savePosition(pos) {
+    await chrome.storage.local.set({ [POS_KEY]: pos });
+  }
 
-  const host = document.createElement("div");
-  host.id = ROOT_ID;
-  host.style.all = "initial";
-  host.style.position = "fixed";
-  host.style.zIndex = "2147483647";
-  host.style.left = "16px";
-  host.style.top = "16px";
-  host.style.pointerEvents = "auto";
+  async function loadWidgetState() {
+    const data = await chrome.storage.local.get(WIDGET_STATE_KEY);
+    return { ...DEFAULT_WIDGET_STATE, ...(data[WIDGET_STATE_KEY] || {}) };
+  }
 
-  const shadow = host.attachShadow({ mode: "open" });
-  shadow.innerHTML = `
+  async function saveWidgetState(state) {
+    await chrome.storage.local.set({ [WIDGET_STATE_KEY]: state });
+  }
+
+  function playNotificationSound(selectedSound = "chime") {
+    try {
+      const sound = AVAILABLE_SOUNDS.find(s => s.id === selectedSound) || AVAILABLE_SOUNDS[0];
+      const audio = new Audio(chrome.runtime.getURL(sound.file));
+      audio.volume = 0.5;
+      audio.play().catch(() => { });
+    } catch {
+      // Ignore sound errors
+    }
+  }
+
+  function injectWidget() {
+    if (document.getElementById(ROOT_ID)) return null;
+
+    const host = document.createElement("div");
+    host.id = ROOT_ID;
+    host.style.all = "initial";
+    host.style.position = "fixed";
+    host.style.zIndex = "2147483647";
+    host.style.left = "16px";
+    host.style.top = "16px";
+    host.style.pointerEvents = "auto";
+
+    const shadow = host.attachShadow({ mode: "open" });
+    shadow.innerHTML = `
     <style>
       :host {
         all: initial;
@@ -71,51 +71,72 @@ function injectWidget() {
       }
       
       .wrap {
-        --bg-primary: #f7f1e6;
-        --bg-secondary: #efe2d0;
-        --bg-card: #fffaf1;
-        --text-primary: #1f1b16;
-        --text-secondary: #6b5f54;
-        --text-muted: #9a8d7f;
-        --accent-work: #c25a3a;
-        --accent-work-light: rgba(194, 90, 58, 0.15);
-        --accent-break: #3b6d5c;
-        --accent-break-light: rgba(59, 109, 92, 0.15);
-        --border: rgba(0, 0, 0, 0.12);
-        --shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-        --radius: 16px;
-        --transition: 0.2s ease;
+        --bg-primary: #faf6ef;
+        --bg-secondary: #f0e8da;
+        --bg-card: #fffcf5;
+        --bg-elevated: #ffffff;
+        --bg-sunken: #ede4d3;
+        --text-primary: #1c1814;
+        --text-secondary: #5e5347;
+        --text-muted: #93877a;
+        --text-inverse: #fffcf5;
+        --accent-work: #c44d2b;
+        --accent-work-hover: #d45a36;
+        --accent-work-light: rgba(196, 77, 43, 0.10);
+        --accent-work-glow: rgba(196, 77, 43, 0.25);
+        --accent-break: #3d7a5f;
+        --accent-break-light: rgba(61, 122, 95, 0.10);
+        --accent-break-glow: rgba(61, 122, 95, 0.25);
+        --border: rgba(0, 0, 0, 0.08);
+        --border-strong: rgba(0, 0, 0, 0.14);
+        --shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+        --radius: 18px;
+        --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         
-        width: 220px;
+        width: 224px;
         border-radius: var(--radius);
         border: 1px solid var(--border);
         box-shadow: var(--shadow);
-        background: linear-gradient(145deg, var(--bg-primary), var(--bg-secondary));
+        background: var(--bg-primary);
         color: var(--text-primary);
         overflow: hidden;
         user-select: none;
-        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
         font-size: 14px;
-        transition: width var(--transition), border-radius var(--transition);
+        transition: width var(--transition), border-radius var(--transition), box-shadow var(--transition);
+        -webkit-font-smoothing: antialiased;
       }
       
       .wrap.dark {
-        --bg-primary: #1a1614;
-        --bg-secondary: #2a2420;
-        --bg-card: #322c28;
-        --text-primary: #f0e8df;
-        --text-secondary: #a89d91;
-        --text-muted: #7a6f64;
-        --accent-work: #e07a5a;
-        --accent-work-light: rgba(224, 122, 90, 0.2);
-        --accent-break: #5aa88c;
-        --accent-break-light: rgba(90, 168, 140, 0.2);
-        --border: rgba(255, 255, 255, 0.1);
+        --bg-primary: #171311;
+        --bg-secondary: #221d19;
+        --bg-card: #2a241e;
+        --bg-elevated: #332c25;
+        --bg-sunken: #131110;
+        --text-primary: #f2ead9;
+        --text-secondary: #a99d8e;
+        --text-muted: #6d6359;
+        --text-inverse: #171311;
+        --accent-work: #e67350;
+        --accent-work-hover: #f08060;
+        --accent-work-light: rgba(230, 115, 80, 0.14);
+        --accent-work-glow: rgba(230, 115, 80, 0.20);
+        --accent-break: #5cba92;
+        --accent-break-light: rgba(92, 186, 146, 0.14);
+        --accent-break-glow: rgba(92, 186, 146, 0.20);
+        --border: rgba(255, 255, 255, 0.07);
+        --border-strong: rgba(255, 255, 255, 0.13);
+        --shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.25);
       }
       
       .wrap.minimized {
         width: auto;
-        border-radius: 24px;
+        border-radius: 28px;
+        box-shadow: var(--shadow), 0 0 0 1px var(--border);
+      }
+      
+      .wrap:hover {
+        box-shadow: var(--shadow), 0 0 20px var(--accent-work-glow);
       }
       
       /* Header / Drag Bar */
@@ -126,13 +147,9 @@ function injectWidget() {
         align-items: center;
         cursor: grab;
         touch-action: none;
-        background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+        background: var(--bg-primary);
         border-bottom: 1px solid var(--border);
         gap: 10px;
-      }
-      
-      .wrap.dark .bar {
-        background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
       }
       
       .bar:active { cursor: grabbing; }
@@ -320,6 +337,7 @@ function injectWidget() {
         stroke-dasharray: 251.2;
         stroke-dashoffset: 0;
         transition: stroke-dashoffset 1s linear, stroke 0.3s;
+        filter: drop-shadow(0 0 4px var(--accent-work-glow));
       }
       
       .timer-display.break .ring-progress {
@@ -408,12 +426,19 @@ function injectWidget() {
       
       .btn-primary {
         background: var(--accent-work);
-        color: white;
+        color: var(--text-inverse);
         border-color: var(--accent-work);
+        box-shadow: 0 2px 8px var(--accent-work-glow);
       }
       
       .btn-primary:hover {
-        filter: brightness(1.1);
+        background: var(--accent-work-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px var(--accent-work-glow);
+      }
+      
+      .btn-primary:active {
+        transform: translateY(0);
       }
       
       .btn-primary.break {
@@ -429,6 +454,11 @@ function injectWidget() {
       .btn-secondary:hover {
         background: var(--bg-secondary);
         color: var(--text-primary);
+      }
+
+      .btn-secondary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
       
       .btn-icon {
@@ -527,15 +557,23 @@ function injectWidget() {
       }
       
       .toggle-label input {
-        display: none;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
       }
       
       .toggle-switch {
         position: relative;
         width: 36px;
         height: 20px;
-        background: var(--bg-card);
-        border: 1px solid var(--border);
+        background: var(--bg-sunken);
+        border: 1px solid var(--border-strong);
         border-radius: 10px;
         transition: var(--transition);
       }
@@ -555,6 +593,12 @@ function injectWidget() {
       .toggle-label input:checked + .toggle-switch {
         background: var(--accent-work);
         border-color: var(--accent-work);
+        box-shadow: 0 0 8px var(--accent-work-glow);
+      }
+
+      .toggle-label input:focus + .toggle-switch {
+        outline: 2px solid var(--accent-work);
+        outline-offset: 2px;
       }
       
       .toggle-label input:checked + .toggle-switch::after {
@@ -711,415 +755,427 @@ function injectWidget() {
     </div>
   `;
 
-  document.documentElement.appendChild(host);
-  return { host, shadow };
-}
-
-async function setupDrag(host, dragHandle, miniView) {
-  const pos = await loadPosition();
-  host.style.left = `${pos.x}px`;
-  host.style.top = `${pos.y}px`;
-
-  let dragging = false;
-  let startX = 0;
-  let startY = 0;
-  let startLeft = 0;
-  let startTop = 0;
-  let maxX = 0;
-  let maxY = 0;
-
-  const updateBounds = () => {
-    const rect = host.getBoundingClientRect();
-    maxX = Math.max(0, window.innerWidth - rect.width);
-    maxY = Math.max(0, window.innerHeight - rect.height);
-
-    // Ensure widget stays in bounds on resize
-    const currentX = parseInt(host.style.left, 10) || 0;
-    const currentY = parseInt(host.style.top, 10) || 0;
-    host.style.left = `${clamp(currentX, 0, maxX)}px`;
-    host.style.top = `${clamp(currentY, 0, maxY)}px`;
-  };
-
-  updateBounds();
-
-  const onDown = (e) => {
-    dragging = true;
-    startX = e.clientX;
-    startY = e.clientY;
-    startLeft = parseInt(host.style.left, 10) || 0;
-    startTop = parseInt(host.style.top, 10) || 0;
-    updateBounds();
-    e.target.setPointerCapture(e.pointerId);
-  };
-
-  const onMove = (e) => {
-    if (!dragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-
-    const x = clamp(startLeft + dx, 0, maxX);
-    const y = clamp(startTop + dy, 0, maxY);
-
-    host.style.left = `${x}px`;
-    host.style.top = `${y}px`;
-  };
-
-  const onUp = async () => {
-    if (!dragging) return;
-    dragging = false;
-    await savePosition({
-      x: parseInt(host.style.left, 10) || 0,
-      y: parseInt(host.style.top, 10) || 0
-    });
-  };
-
-  // Double-click to reset position
-  const onDblClick = async () => {
-    host.style.left = "16px";
-    host.style.top = "16px";
-    await savePosition({ x: 16, y: 16 });
-  };
-
-  for (const handle of [dragHandle, miniView]) {
-    handle.addEventListener("pointerdown", onDown);
-    handle.addEventListener("pointermove", onMove);
-    handle.addEventListener("pointerup", onUp);
-    handle.addEventListener("pointercancel", onUp);
-    handle.addEventListener("dblclick", onDblClick);
+    document.documentElement.appendChild(host);
+    return { host, shadow };
   }
 
-  window.addEventListener("resize", updateBounds);
+  async function setupDrag(host, dragHandle, miniView) {
+    const pos = await loadPosition();
+    host.style.left = `${pos.x}px`;
+    host.style.top = `${pos.y}px`;
 
-  return () => {
-    window.removeEventListener("resize", updateBounds);
-  };
-}
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+    let maxX = 0;
+    let maxY = 0;
 
-async function getInitialState() {
-  const [localData, syncData] = await Promise.all([
-    chrome.storage.local.get(STORAGE_KEY),
-    chrome.storage.sync.get(SETTINGS_KEY).catch(() => ({}))
-  ]);
-  const settingsRaw = syncData[SETTINGS_KEY] ?? localData[SETTINGS_KEY];
-  return {
-    state: normalizeState(localData[STORAGE_KEY]),
-    settings: normalizeSettings(settingsRaw)
-  };
-}
+    const updateBounds = () => {
+      const rect = host.getBoundingClientRect();
+      maxX = Math.max(0, window.innerWidth - rect.width);
+      maxY = Math.max(0, window.innerHeight - rect.height);
 
-async function sendMessageSafe(message) {
-  try {
-    return await chrome.runtime.sendMessage(message);
-  } catch {
-    return null;
-  }
-}
-
-(async () => {
-  const injected = injectWidget();
-  if (!injected) return;
-
-  const { host, shadow } = injected;
-  const wrap = shadow.getElementById("wrap");
-  const miniView = shadow.getElementById("miniView");
-  const miniDot = shadow.getElementById("miniDot");
-  const miniTime = shadow.getElementById("miniTime");
-  const miniExpand = shadow.getElementById("miniExpand");
-  const dragHandle = shadow.getElementById("drag");
-  const modePill = shadow.getElementById("modePill");
-  const barTitle = shadow.getElementById("barTitle");
-  const timerDisplay = shadow.getElementById("timerDisplay");
-  const timeText = shadow.getElementById("timeText");
-  const ringProgress = shadow.getElementById("ringProgress");
-  const taskInput = shadow.getElementById("taskInput");
-  const pomoDots = shadow.getElementById("pomoDots");
-  const mainBtn = shadow.getElementById("mainBtn");
-  const skipBtn = shadow.getElementById("skipBtn");
-  const stopBtn = shadow.getElementById("stopBtn");
-  const settingsBtn = shadow.getElementById("settingsBtn");
-  const minimizeBtn = shadow.getElementById("minimizeBtn");
-  const settingsPanel = shadow.getElementById("settingsPanel");
-  const setWork = shadow.getElementById("setWork");
-  const setBreak = shadow.getElementById("setBreak");
-  const setLongBreak = shadow.getElementById("setLongBreak");
-  const setSound = shadow.getElementById("setSound");
-  const setAutoBreaks = shadow.getElementById("setAutoBreaks");
-  const setDark = shadow.getElementById("setDark");
-
-  const cleanup = await setupDrag(host, dragHandle, miniView);
-
-  let { state: cachedState, settings: cachedSettings } = await getInitialState();
-  let widgetState = await loadWidgetState();
-  let advanceInFlight = false;
-  let lastPlayedMode = null;
-
-  function applyTheme() {
-    const isDark = cachedSettings.theme === "dark" ||
-      (cachedSettings.theme === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-    wrap.classList.toggle("dark", isDark);
-    setDark.checked = isDark;
-  }
-
-  function applyMinimized() {
-    wrap.classList.toggle("minimized", widgetState.minimized);
-  }
-
-  function renderSettings() {
-    setWork.value = cachedSettings.workMinutes;
-    setBreak.value = cachedSettings.breakMinutes;
-    setLongBreak.value = cachedSettings.longBreakMinutes;
-    setSound.checked = cachedSettings.soundEnabled;
-    setAutoBreaks.checked = cachedSettings.autoStartBreaks;
-    settingsPanel.classList.toggle("hidden", !widgetState.showSettings);
-    settingsBtn.classList.toggle("active", widgetState.showSettings);
-  }
-
-  function render() {
-    const state = cachedState;
-    const settings = cachedSettings;
-    if (!state || !settings) return;
-
-    const active = !!state.active;
-    const paused = state.pausedRemainingMs != null;
-    const mode = state.mode || "work";
-    const displayMode = active ? mode : "work";
-
-    let remainingMs = 0;
-    let totalMs = state.workMinutes * 60 * 1000;
-
-    if (active) {
-      if (paused) {
-        remainingMs = state.pausedRemainingMs;
-      } else if (state.endAt) {
-        remainingMs = Math.max(0, state.endAt - Date.now());
-      }
-
-      if (mode === "break") {
-        const isLongBreak = state.completedPomodoros > 0 &&
-          state.completedPomodoros % settings.pomodorosUntilLongBreak === 0;
-        totalMs = (isLongBreak ? state.longBreakMinutes : state.breakMinutes) * 60 * 1000;
-      }
-    } else {
-      remainingMs = settings.workMinutes * 60 * 1000;
-      totalMs = settings.workMinutes * 60 * 1000;
-    }
-
-    const timeStr = formatMs(remainingMs);
-
-    // Mini view
-    miniTime.textContent = timeStr;
-    miniDot.className = `mini-dot ${displayMode === "break" ? "break" : ""} ${paused ? "paused" : ""}`;
-    if (!active) miniDot.classList.add("paused");
-
-    // Mode pill
-    if (!active) {
-      modePill.textContent = "Idle";
-      modePill.className = "pill idle";
-    } else {
-      modePill.textContent = mode === "break" ? "Break" : "Focus";
-      modePill.className = `pill ${mode === "break" ? "break" : ""}`;
-    }
-
-    // Bar title
-    barTitle.textContent = state.currentTask || "Focus Timer";
-
-    // Timer display
-    timerDisplay.className = `timer-display ${displayMode === "break" ? "break" : ""}`;
-    timeText.textContent = timeStr;
-
-    // Progress ring
-    const progress = active ? (1 - remainingMs / totalMs) : 0;
-    const offset = RING_CIRCUMFERENCE * (1 - progress);
-    ringProgress.style.strokeDashoffset = offset;
-
-    // Task input
-    if (document.activeElement !== taskInput && shadow.activeElement !== taskInput) {
-      taskInput.value = state.currentTask || "";
-    }
-
-    // Pomodoro dots
-    const pomoCount = settings.pomodorosUntilLongBreak || 4;
-    const completed = state.completedPomodoros % pomoCount;
-    let dotsHtml = "";
-    for (let i = 0; i < pomoCount; i++) {
-      dotsHtml += `<span class="pomo-dot ${i < completed ? "filled" : ""}" aria-label="${i < completed ? "Completed" : "Not completed"}"></span>`;
-    }
-    pomoDots.innerHTML = dotsHtml;
-
-    // Buttons
-    if (!active) {
-      mainBtn.textContent = "Start";
-      mainBtn.className = "btn btn-primary";
-      mainBtn.setAttribute("aria-label", "Start timer");
-      skipBtn.classList.add("hidden");
-      stopBtn.classList.add("hidden");
-    } else if (paused) {
-      mainBtn.textContent = "Resume";
-      mainBtn.className = `btn btn-primary ${mode === "break" ? "break" : ""}`;
-      mainBtn.setAttribute("aria-label", "Resume timer");
-      skipBtn.classList.remove("hidden");
-      stopBtn.classList.remove("hidden");
-    } else {
-      mainBtn.textContent = "Pause";
-      mainBtn.className = `btn btn-primary ${mode === "break" ? "break" : ""}`;
-      mainBtn.setAttribute("aria-label", "Pause timer");
-      skipBtn.classList.remove("hidden");
-      stopBtn.classList.remove("hidden");
-    }
-
-    applyTheme();
-    applyMinimized();
-    renderSettings();
-  }
-
-  async function advanceSegmentIfNeeded() {
-    if (advanceInFlight) return;
-    if (!cachedState?.active) return;
-    if (!cachedState.endAt) return;
-    if (cachedState.endAt > Date.now()) return;
-
-    advanceInFlight = true;
-    const previousMode = cachedState.mode;
-    const res = await sendMessageSafe({ type: "ADVANCE_SEGMENT" });
-    if (res?.ok && res.state) {
-      cachedState = normalizeState(res.state);
-
-      // Play sound if mode changed
-      if (cachedSettings.soundEnabled && cachedState.mode !== previousMode) {
-        playNotificationSound(cachedSettings.selectedSound);
-      }
-    }
-    advanceInFlight = false;
-  }
-
-  async function saveSettingsToBackground() {
-    const settings = {
-      workMinutes: parseInt(setWork.value) || 25,
-      breakMinutes: parseInt(setBreak.value) || 5,
-      longBreakMinutes: parseInt(setLongBreak.value) || 15,
-      soundEnabled: setSound.checked,
-      autoStartBreaks: setAutoBreaks.checked,
-      theme: setDark.checked ? "dark" : "light"
+      // Ensure widget stays in bounds on resize
+      const currentX = parseInt(host.style.left, 10) || 0;
+      const currentY = parseInt(host.style.top, 10) || 0;
+      host.style.left = `${clamp(currentX, 0, maxX)}px`;
+      host.style.top = `${clamp(currentY, 0, maxY)}px`;
     };
 
-    const res = await sendMessageSafe({ type: "SET_SETTINGS", settings });
-    if (res?.settings) {
-      cachedSettings = normalizeSettings(res.settings);
-      render();
+    updateBounds();
+
+    const onDown = (e) => {
+      dragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = parseInt(host.style.left, 10) || 0;
+      startTop = parseInt(host.style.top, 10) || 0;
+      updateBounds();
+      e.target.setPointerCapture(e.pointerId);
+    };
+
+    const onMove = (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+
+      const x = clamp(startLeft + dx, 0, maxX);
+      const y = clamp(startTop + dy, 0, maxY);
+
+      host.style.left = `${x}px`;
+      host.style.top = `${y}px`;
+    };
+
+    const onUp = async () => {
+      if (!dragging) return;
+      dragging = false;
+      await savePosition({
+        x: parseInt(host.style.left, 10) || 0,
+        y: parseInt(host.style.top, 10) || 0
+      });
+    };
+
+    // Double-click to reset position
+    const onDblClick = async () => {
+      host.style.left = "16px";
+      host.style.top = "16px";
+      await savePosition({ x: 16, y: 16 });
+    };
+
+    for (const handle of [dragHandle, miniView]) {
+      handle.addEventListener("pointerdown", onDown);
+      handle.addEventListener("pointermove", onMove);
+      handle.addEventListener("pointerup", onUp);
+      handle.addEventListener("pointercancel", onUp);
+      handle.addEventListener("dblclick", onDblClick);
+    }
+
+    window.addEventListener("resize", updateBounds);
+
+    return () => {
+      window.removeEventListener("resize", updateBounds);
+    };
+  }
+
+  async function getInitialState() {
+    const [localData, syncData] = await Promise.all([
+      chrome.storage.local.get(STORAGE_KEY),
+      chrome.storage.sync.get(SETTINGS_KEY).catch(() => ({}))
+    ]);
+    const settingsRaw = syncData[SETTINGS_KEY] ?? localData[SETTINGS_KEY];
+    return {
+      state: normalizeState(localData[STORAGE_KEY]),
+      settings: normalizeSettings(settingsRaw)
+    };
+  }
+
+  async function sendMessageSafe(message) {
+    try {
+      return await chrome.runtime.sendMessage(message);
+    } catch {
+      return null;
     }
   }
 
-  // Event listeners
-  mainBtn.addEventListener("click", async () => {
-    if (!cachedState?.active) {
-      const res = await sendMessageSafe({
-        type: "START_SESSION",
-        workMinutes: cachedSettings.workMinutes,
-        breakMinutes: cachedSettings.breakMinutes,
-        longBreakMinutes: cachedSettings.longBreakMinutes,
-        task: taskInput.value,
-        seedUrl: location.href
-      });
-      if (res?.state) cachedState = normalizeState(res.state);
-    } else if (cachedState.pausedRemainingMs != null) {
-      const res = await sendMessageSafe({ type: "RESUME" });
-      if (res?.state) cachedState = normalizeState(res.state);
-    } else {
-      const res = await sendMessageSafe({ type: "PAUSE" });
-      if (res?.state) cachedState = normalizeState(res.state);
-    }
-    render();
-  });
+  (async () => {
+    const injected = injectWidget();
+    if (!injected) return;
 
-  skipBtn.addEventListener("click", async () => {
-    const res = await sendMessageSafe({ type: "SKIP_SEGMENT" });
-    if (res?.state) cachedState = normalizeState(res.state);
-    render();
-  });
+    const { host, shadow } = injected;
+    const wrap = shadow.getElementById("wrap");
+    const miniView = shadow.getElementById("miniView");
+    const miniDot = shadow.getElementById("miniDot");
+    const miniTime = shadow.getElementById("miniTime");
+    const miniExpand = shadow.getElementById("miniExpand");
+    const dragHandle = shadow.getElementById("drag");
+    const modePill = shadow.getElementById("modePill");
+    const barTitle = shadow.getElementById("barTitle");
+    const timerDisplay = shadow.getElementById("timerDisplay");
+    const timeText = shadow.getElementById("timeText");
+    const ringProgress = shadow.getElementById("ringProgress");
+    const taskInput = shadow.getElementById("taskInput");
+    const pomoDots = shadow.getElementById("pomoDots");
+    const mainBtn = shadow.getElementById("mainBtn");
+    const skipBtn = shadow.getElementById("skipBtn");
+    const stopBtn = shadow.getElementById("stopBtn");
+    const settingsBtn = shadow.getElementById("settingsBtn");
+    const minimizeBtn = shadow.getElementById("minimizeBtn");
+    const settingsPanel = shadow.getElementById("settingsPanel");
+    const setWork = shadow.getElementById("setWork");
+    const setBreak = shadow.getElementById("setBreak");
+    const setLongBreak = shadow.getElementById("setLongBreak");
+    const setSound = shadow.getElementById("setSound");
+    const setAutoBreaks = shadow.getElementById("setAutoBreaks");
+    const setDark = shadow.getElementById("setDark");
 
-  stopBtn.addEventListener("click", async () => {
-    const res = await sendMessageSafe({ type: "STOP_SESSION" });
-    if (res?.state) cachedState = normalizeState(res.state);
-    render();
-  });
+    const cleanup = await setupDrag(host, dragHandle, miniView);
 
-  taskInput.addEventListener("change", async () => {
-    await sendMessageSafe({ type: "SET_TASK", task: taskInput.value });
-  });
+    let { state: cachedState, settings: cachedSettings } = await getInitialState();
+    let widgetState = await loadWidgetState();
+    let advanceInFlight = false;
 
-  settingsBtn.addEventListener("click", async () => {
-    widgetState.showSettings = !widgetState.showSettings;
-    await saveWidgetState(widgetState);
-    render();
-  });
-
-  minimizeBtn.addEventListener("click", async () => {
-    widgetState.minimized = true;
-    await saveWidgetState(widgetState);
-    render();
-  });
-
-  miniExpand.addEventListener("click", async (e) => {
-    e.stopPropagation();
-    widgetState.minimized = false;
-    await saveWidgetState(widgetState);
-    render();
-  });
-
-  // Settings inputs
-  [setWork, setBreak, setLongBreak].forEach(input => {
-    input.addEventListener("change", saveSettingsToBackground);
-  });
-
-  [setSound, setAutoBreaks, setDark].forEach(input => {
-    input.addEventListener("change", saveSettingsToBackground);
-  });
-
-  // Storage change listener
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "local" && changes[STORAGE_KEY]) {
-      cachedState = normalizeState(changes[STORAGE_KEY].newValue);
-      render();
+    function applyTheme() {
+      const isDark = cachedSettings.theme === "dark" ||
+        (cachedSettings.theme === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      wrap.classList.toggle("dark", isDark);
+      setDark.checked = isDark;
     }
 
-    if (area === "sync" && changes[SETTINGS_KEY]) {
-      cachedSettings = normalizeSettings(changes[SETTINGS_KEY].newValue);
-      render();
+    function applyMinimized() {
+      wrap.classList.toggle("minimized", widgetState.minimized);
     }
-  });
 
-  // Message listener for sound notifications from service worker
-  chrome.runtime.onMessage.addListener((msg) => {
-    if (msg?.type === "STATE_UPDATED" && msg.playSound && cachedSettings?.soundEnabled) {
-      playNotificationSound(cachedSettings?.selectedSound);
+    function applyVisibility() {
+      host.style.display = widgetState.hidden ? "none" : "block";
     }
-    if (msg?.type === "SETTINGS_UPDATED" && msg.settings) {
-      cachedSettings = normalizeSettings(msg.settings);
+
+    function renderSettings() {
+      setWork.value = cachedSettings.workMinutes;
+      setBreak.value = cachedSettings.breakMinutes;
+      setLongBreak.value = cachedSettings.longBreakMinutes;
+      setSound.checked = cachedSettings.soundEnabled;
+      setAutoBreaks.checked = cachedSettings.autoStartBreaks;
+      settingsPanel.classList.toggle("hidden", !widgetState.showSettings);
+      settingsBtn.classList.toggle("active", widgetState.showSettings);
+    }
+
+    function render() {
+      const state = cachedState;
+      const settings = cachedSettings;
+      if (!state || !settings) return;
+
+      const active = !!state.active;
+      const paused = state.pausedRemainingMs != null;
+      const mode = state.mode || "work";
+      const displayMode = active ? mode : "work";
+      const pomoCount = (active ? state.pomodorosUntilLongBreak : settings.pomodorosUntilLongBreak) || 4;
+
+      let remainingMs = 0;
+      let totalMs = state.workMinutes * 60 * 1000;
+
+      if (active) {
+        if (paused) {
+          remainingMs = state.pausedRemainingMs;
+        } else if (state.endAt) {
+          remainingMs = Math.max(0, state.endAt - Date.now());
+        }
+
+        if (mode === "break") {
+          const isLongBreak = state.completedPomodoros > 0 &&
+            state.completedPomodoros % pomoCount === 0;
+          totalMs = (isLongBreak ? state.longBreakMinutes : state.breakMinutes) * 60 * 1000;
+        }
+      } else {
+        remainingMs = settings.workMinutes * 60 * 1000;
+        totalMs = settings.workMinutes * 60 * 1000;
+      }
+
+      const timeStr = formatMs(remainingMs);
+
+      // Mini view
+      miniTime.textContent = timeStr;
+      miniDot.className = `mini-dot ${displayMode === "break" ? "break" : ""} ${paused ? "paused" : ""}`;
+      if (!active) miniDot.classList.add("paused");
+
+      // Mode pill
+      if (!active) {
+        modePill.textContent = "Idle";
+        modePill.className = "pill idle";
+      } else {
+        modePill.textContent = mode === "break" ? "Break" : "Focus";
+        modePill.className = `pill ${mode === "break" ? "break" : ""}`;
+      }
+
+      // Bar title
+      barTitle.textContent = state.currentTask || "Focus Timer";
+
+      // Timer display
+      timerDisplay.className = `timer-display ${displayMode === "break" ? "break" : ""}`;
+      timeText.textContent = timeStr;
+
+      // Progress ring
+      const progress = active ? (1 - remainingMs / totalMs) : 0;
+      const offset = RING_CIRCUMFERENCE * (1 - progress);
+      ringProgress.style.strokeDashoffset = offset;
+
+      // Task input
+      if (document.activeElement !== taskInput && shadow.activeElement !== taskInput) {
+        taskInput.value = state.currentTask || "";
+      }
+
+      // Pomodoro dots
+      const completed = state.completedPomodoros % pomoCount;
+      let dotsHtml = "";
+      for (let i = 0; i < pomoCount; i++) {
+        dotsHtml += `<span class="pomo-dot ${i < completed ? "filled" : ""}" aria-label="${i < completed ? "Completed" : "Not completed"}"></span>`;
+      }
+      pomoDots.innerHTML = dotsHtml;
+
+      // Buttons
+      const stopBlocked = active && settings.strictMode && mode === "work";
+      if (!active) {
+        mainBtn.textContent = "Start";
+        mainBtn.className = "btn btn-primary";
+        mainBtn.setAttribute("aria-label", "Start timer");
+        skipBtn.classList.add("hidden");
+        stopBtn.classList.add("hidden");
+        stopBtn.disabled = false;
+        stopBtn.title = "Stop";
+      } else if (paused) {
+        mainBtn.textContent = "Resume";
+        mainBtn.className = `btn btn-primary ${mode === "break" ? "break" : ""}`;
+        mainBtn.setAttribute("aria-label", "Resume timer");
+        skipBtn.classList.remove("hidden");
+        stopBtn.classList.remove("hidden");
+        stopBtn.disabled = stopBlocked;
+        stopBtn.title = stopBlocked ? "Strict mode is enabled during focus" : "Stop";
+      } else {
+        mainBtn.textContent = "Pause";
+        mainBtn.className = `btn btn-primary ${mode === "break" ? "break" : ""}`;
+        mainBtn.setAttribute("aria-label", "Pause timer");
+        skipBtn.classList.remove("hidden");
+        stopBtn.classList.remove("hidden");
+        stopBtn.disabled = stopBlocked;
+        stopBtn.title = stopBlocked ? "Strict mode is enabled during focus" : "Stop";
+      }
+
       applyTheme();
+      applyMinimized();
+      applyVisibility();
+      renderSettings();
+    }
+
+    async function advanceSegmentIfNeeded() {
+      if (advanceInFlight) return;
+      if (!cachedState?.active) return;
+      if (!cachedState.endAt) return;
+      if (cachedState.endAt > Date.now()) return;
+
+      advanceInFlight = true;
+      const res = await sendMessageSafe({ type: "ADVANCE_SEGMENT" });
+      if (res?.ok && res.state) {
+        cachedState = normalizeState(res.state);
+      }
+      advanceInFlight = false;
+    }
+
+    async function saveSettingsToBackground() {
+      const settings = {
+        workMinutes: parseInt(setWork.value) || 25,
+        breakMinutes: parseInt(setBreak.value) || 5,
+        longBreakMinutes: parseInt(setLongBreak.value) || 15,
+        soundEnabled: setSound.checked,
+        autoStartBreaks: setAutoBreaks.checked,
+        theme: setDark.checked ? "dark" : "light"
+      };
+
+      const res = await sendMessageSafe({ type: "SET_SETTINGS", settings });
+      if (res?.settings) {
+        cachedSettings = normalizeSettings(res.settings);
+        render();
+      }
+    }
+
+    // Event listeners
+    mainBtn.addEventListener("click", async () => {
+      if (!cachedState?.active) {
+        const res = await sendMessageSafe({
+          type: "START_SESSION",
+          workMinutes: cachedSettings.workMinutes,
+          breakMinutes: cachedSettings.breakMinutes,
+          longBreakMinutes: cachedSettings.longBreakMinutes,
+          task: taskInput.value,
+          seedUrl: location.href
+        });
+        if (res?.state) cachedState = normalizeState(res.state);
+      } else if (cachedState.pausedRemainingMs != null) {
+        const res = await sendMessageSafe({ type: "RESUME" });
+        if (res?.state) cachedState = normalizeState(res.state);
+      } else {
+        const res = await sendMessageSafe({ type: "PAUSE" });
+        if (res?.state) cachedState = normalizeState(res.state);
+      }
       render();
-    }
-    if (msg?.state) {
-      cachedState = normalizeState(msg.state);
+    });
+
+    skipBtn.addEventListener("click", async () => {
+      const res = await sendMessageSafe({ type: "SKIP_SEGMENT" });
+      if (res?.state) cachedState = normalizeState(res.state);
       render();
-    }
-  });
+    });
 
-  // System theme change
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-    if (cachedSettings?.theme === "auto") {
-      applyTheme();
-    }
-  });
+    stopBtn.addEventListener("click", async () => {
+      const res = await sendMessageSafe({ type: "STOP_SESSION" });
+      if (res?.state) cachedState = normalizeState(res.state);
+      render();
+    });
 
-  // Initial render
-  render();
+    taskInput.addEventListener("change", async () => {
+      await sendMessageSafe({ type: "SET_TASK", task: taskInput.value });
+    });
 
-  // Tick interval
-  setInterval(async () => {
-    await advanceSegmentIfNeeded();
+    settingsBtn.addEventListener("click", async () => {
+      widgetState.showSettings = !widgetState.showSettings;
+      await saveWidgetState(widgetState);
+      render();
+    });
+
+    minimizeBtn.addEventListener("click", async () => {
+      widgetState.minimized = true;
+      await saveWidgetState(widgetState);
+      render();
+    });
+
+    miniExpand.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      widgetState.minimized = false;
+      await saveWidgetState(widgetState);
+      render();
+    });
+
+    // Settings inputs
+    [setWork, setBreak, setLongBreak].forEach(input => {
+      input.addEventListener("change", saveSettingsToBackground);
+    });
+
+    [setSound, setAutoBreaks, setDark].forEach(input => {
+      input.addEventListener("change", saveSettingsToBackground);
+    });
+
+    // Storage change listener
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === "local" && changes[STORAGE_KEY]) {
+        cachedState = normalizeState(changes[STORAGE_KEY].newValue);
+        render();
+      }
+
+      if (area === "local" && changes[WIDGET_STATE_KEY]) {
+        widgetState = { ...DEFAULT_WIDGET_STATE, ...(changes[WIDGET_STATE_KEY].newValue || {}) };
+        render();
+      }
+
+      if (area === "sync" && changes[SETTINGS_KEY]) {
+        cachedSettings = normalizeSettings(changes[SETTINGS_KEY].newValue);
+        render();
+      }
+    });
+
+    // Message listener for sound notifications from service worker
+    chrome.runtime.onMessage.addListener((msg) => {
+      if (msg?.type === "STATE_UPDATED" && msg.playSound && cachedSettings?.soundEnabled) {
+        playNotificationSound(cachedSettings?.selectedSound);
+      }
+      if (msg?.type === "SETTINGS_UPDATED" && msg.settings) {
+        cachedSettings = normalizeSettings(msg.settings);
+        applyTheme();
+        render();
+      }
+      if (msg?.state) {
+        cachedState = normalizeState(msg.state);
+        render();
+      }
+    });
+
+    // System theme change
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+      if (cachedSettings?.theme === "auto") {
+        applyTheme();
+      }
+    });
+
+    // Initial render
     render();
-  }, 1000);
-})().catch(() => {
-  // Ignore content script errors to avoid breaking pages.
-});
+
+    // Tick interval
+    setInterval(async () => {
+      await advanceSegmentIfNeeded();
+      render();
+    }, 1000);
+
+    window.addEventListener("unload", cleanup);
+  })().catch(() => {
+    // Ignore content script errors to avoid breaking pages.
+  });
 })();

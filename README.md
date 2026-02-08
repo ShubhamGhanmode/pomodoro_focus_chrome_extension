@@ -65,6 +65,7 @@
 
 - **Draggable Timer Widget** - Always-visible overlay on every page
 - **Minimizable View** - Collapse to compact mode showing just the timer
+- **Hide/Unhide Widget Toggle** - Quickly hide or restore the sticky page widget from the popup
 - **Work/Break Cycling** - Automatic transitions between focus and rest periods
 - **Long Breaks** - Extended breaks after completing multiple pomodoros
 - **Task Labels** - Name what you're working on for each session
@@ -85,7 +86,7 @@
 <details>
 <summary><b>📈 Statistics & Tracking</b></summary>
 
-- **Daily Progress** - Track pomodoros and focus minutes per day
+- **Daily Progress** - Track pomodoros and focus minutes per day (local calendar date)
 - **Weekly Chart** - Visual overview of your week's productivity
 - **Streak Counter** - See your consecutive active days
 - **Daily Goals** - Set and track pomodoro targets
@@ -103,7 +104,7 @@
 - **Custom Sound Selection** - Choose from Chime, Bell, Digital, or Gentle notification sounds
 - **Desktop Notifications** - System notifications for segment changes
 - **Dark/Light Theme** - Match your preference or system setting
-- **Strict Mode** - Prevent stopping during work (optional)
+- **Strict Mode** - Prevent stopping during work across popup, widget, and shortcuts (optional)
 - **Sync Across Devices** - Settings sync automatically via Chrome account
 
 </details>
@@ -165,6 +166,7 @@ git clone https://github.com/ShubhamGhanmode/pomodoro_focus_chrome_extension
 - **Drag** - Click and drag the header to reposition
 - **Double-click** - Reset position to top-left corner
 - **Minimize** - Click the minimize icon for compact view
+- **Hide/Unhide** - Use the popup eye button to hide or restore the sticky widget
 
 </details>
 
@@ -273,6 +275,9 @@ No build step required. Edit files directly and reload the extension:
 1. Make changes to source files
 2. Go to chrome://extensions
 3. Click the refresh icon on the extension card
+
+# Optional validation
+node tests/shared.test.js
 ```
 
 ---
@@ -287,7 +292,7 @@ No build step required. Edit files directly and reload the extension:
 | `focusState` | Current session state |
 | `focusStats` | Productivity statistics |
 | `focusWidgetPos` | Widget position |
-| `focusWidgetState` | Widget UI state (minimized, etc.) |
+| `focusWidgetState` | Widget UI state (`minimized`, `showSettings`, `hidden`) |
 | `savedAllowlist` | Persistent allowlist domains |
 
 </details>

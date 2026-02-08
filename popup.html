@@ -13,24 +13,30 @@
         <!-- Header -->
         <header class="header">
             <div class="brand">
-                <span class="brand-icon">🍅</span>
+                <span class="brand-icon" aria-hidden="true">🍅</span>
                 <span class="brand-text">Pomodoro Focus</span>
-                <span class="sync-indicator" id="syncIndicator" title="Settings sync across devices">⟳</span>
+                <span class="sync-indicator" id="syncIndicator" title="Settings synced across devices"
+                    aria-hidden="true">⟳</span>
             </div>
-            <button class="icon-btn" id="settingsToggle" aria-label="Toggle settings" title="Settings">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path
-                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
-                    </path>
-                </svg>
-                <!-- <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path
-                        d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42">
-                    </path>
-                </svg> -->
-            </button>
+            <div class="header-actions">
+                <button class="icon-btn" id="widgetToggleBtn" aria-label="Hide sticky widget"
+                    title="Hide sticky widget">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+                <button class="icon-btn" id="settingsToggle" aria-label="Toggle settings" title="Settings">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
+                    </svg>
+                </button>
+            </div>
         </header>
 
         <!-- Timer Section -->
@@ -51,8 +57,8 @@
             </div>
 
             <div class="task-display" id="taskDisplay">
-                <input type="text" id="taskInput" placeholder="What are you working on?" maxlength="50"
-                    aria-label="Current task" />
+                <input type="text" id="taskInput" placeholder="What are you focusing on?" maxlength="50"
+                    aria-label="Current task" autocomplete="off" spellcheck="false" />
             </div>
 
             <div class="pomodoro-count" id="pomodoroCount">
@@ -61,16 +67,17 @@
             </div>
 
             <div class="controls">
-                <button class="btn btn-secondary" id="skipBtn" aria-label="Skip segment" title="Skip to next segment">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <button class="btn btn-secondary" id="skipBtn" aria-label="Skip to next segment"
+                    title="Skip to next segment">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"></path>
                     </svg>
                 </button>
                 <button class="btn btn-primary" id="mainBtn" aria-label="Start timer">
-                    Start
+                    Start Focus
                 </button>
                 <button class="btn btn-secondary" id="stopBtn" aria-label="Stop session" title="Stop session">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
                         <rect x="6" y="6" width="12" height="12" rx="2"></rect>
                     </svg>
                 </button>
@@ -121,7 +128,8 @@
                 <div class="history-header">
                     <h4 class="chart-title">Task History</h4>
                     <div class="history-actions">
-                        <button class="btn-icon-small" id="exportHistoryBtn" title="Export to JSON">
+                        <button class="btn-icon-small" id="exportHistoryBtn" title="Export to JSON"
+                            aria-label="Export task history to JSON">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -129,7 +137,8 @@
                                 <line x1="12" y1="15" x2="12" y2="3"></line>
                             </svg>
                         </button>
-                        <button class="btn-icon-small" id="clearHistoryBtn" title="Clear history">
+                        <button class="btn-icon-small" id="clearHistoryBtn" title="Clear history"
+                            aria-label="Clear task history">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -221,7 +230,8 @@
                             <option value="digital">Digital</option>
                             <option value="gentle">Gentle</option>
                         </select>
-                        <button class="btn-icon-small" id="previewSoundBtn" title="Preview sound">
+                        <button class="btn-icon-small" id="previewSoundBtn" title="Preview sound"
+                            aria-label="Preview notification sound">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                                 <path fill="none" stroke="currentColor" stroke-width="2"
@@ -294,9 +304,9 @@
         </section>
 
         <!-- Keyboard Shortcuts -->
-        <footer class="shortcuts">
-            <span class="shortcut"><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd> Toggle</span>
-            <span class="shortcut"><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> Stop</span>
+        <footer class="shortcuts" aria-label="Keyboard shortcuts">
+            <span class="shortcut"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Y</kbd> Toggle</span>
+            <span class="shortcut"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>U</kbd> Stop</span>
         </footer>
     </div>
     <script src="shared.js"></script>

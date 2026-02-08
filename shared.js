@@ -47,6 +47,7 @@
     workMinutes: 25,
     breakMinutes: 5,
     longBreakMinutes: 15,
+    pomodorosUntilLongBreak: 4,
     completedPomodoros: 0,
     totalCompletedToday: 0,
     currentTask: "",
@@ -84,7 +85,8 @@
   // Default widget state
   const DEFAULT_WIDGET_STATE = {
     minimized: false,
-    showSettings: false
+    showSettings: false,
+    hidden: false
   };
 
   // Ring circumference for progress indicator
@@ -121,8 +123,15 @@
    * Get today's date key in ISO format (YYYY-MM-DD)
    * @returns {string} Today's date key
    */
+  function getDateKey(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
   function getTodayKey() {
-    return new Date().toISOString().slice(0, 10);
+    return getDateKey(new Date());
   }
 
   /**
@@ -227,6 +236,7 @@
       formatMs,
       clamp,
       getTodayKey,
+      getDateKey,
       normalizeDomain,
       normalizeState,
       normalizeSettings,

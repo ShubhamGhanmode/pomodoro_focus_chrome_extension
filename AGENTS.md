@@ -6,9 +6,9 @@ This repository contains a Manifest V3 Chrome extension that provides a draggabl
 
 - `manifest.json` wires the MV3 service worker, content script, popup, permissions, keyboard commands, and assets.
 - `shared.js` contains shared constants, default states, templates, sounds, and utility functions used across all scripts.
-- `sw.js` stores session state in `chrome.storage.local`, settings in `chrome.storage.sync`, manages the declarativeNetRequest redirect rule, handles alarms for badge updates, sends desktop notifications, tracks statistics and task history, and records blocked targets per tab via `chrome.webNavigation` in `chrome.storage.session`.
+- `sw.js` stores session state in `chrome.storage.local`, settings in `chrome.storage.sync`, manages the declarativeNetRequest redirect rule, handles alarms for badge updates, sends desktop notifications, tracks statistics and task history, enforces strict-mode stop protections, and records blocked targets per tab via `chrome.webNavigation` in `chrome.storage.session`.
 - `content.js` injects a draggable, minimizable overlay into each page with settings panel, reads session state from storage, and runs a local tick to keep the timer accurate without waking the service worker every second.
-- `popup.html`, `popup.css`, `popup.js` provide the extension popup with timer controls, statistics dashboard, task history, settings management, and allowlist editor.
+- `popup.html`, `popup.css`, `popup.js` provide the extension popup with timer controls, statistics dashboard, task history, settings management, allowlist editor, and sticky-widget visibility toggle.
 - `warning.html`, `warning.css`, `warning.js` render the blocked-site warning with improved UX and allow adding the blocked domain to the allowlist.
 - `sounds/` contains notification sounds: chime.mp3, bell.mp3, digital.mp3, gentle.mp3
 
@@ -20,12 +20,12 @@ This repository contains a Manifest V3 Chrome extension that provides a draggabl
 
 ### chrome.storage.local (State and data - device-specific)
 - `focusState` - Current session state
-  - `active`, `mode`, `endAt`, `pausedRemainingMs`, `allowlist`, `workMinutes`, `breakMinutes`, `longBreakMinutes`, `completedPomodoros`, `totalCompletedToday`, `currentTask`, `sessionStartedAt`
+  - `active`, `mode`, `endAt`, `pausedRemainingMs`, `allowlist`, `workMinutes`, `breakMinutes`, `longBreakMinutes`, `pomodorosUntilLongBreak`, `completedPomodoros`, `totalCompletedToday`, `currentTask`, `sessionStartedAt`
 - `focusStats` - Productivity statistics
   - `totalPomodoros`, `totalFocusMinutes`, `dailyStats`, `weeklyStreak`, `lastActiveDate`
 - `taskHistory` - Array of completed tasks with timestamps, duration, and mode
 - `focusWidgetPos` - Widget position `{ x, y }`
-- `focusWidgetState` - Widget UI state `{ minimized, showSettings }`
+- `focusWidgetState` - Widget UI state `{ minimized, showSettings, hidden }`
 - `savedAllowlist` - Persistent allowlist domains array
 
 ### chrome.storage.session
@@ -47,7 +47,8 @@ Default pomodoro templates:
 ## Development
 
 - Load the extension from `d:\Projects\promodoro_chrome` in `chrome://extensions` with Developer Mode enabled.
-- There is no build or test step.
+- There is no build step.
+- Lightweight validation test: `node tests/shared.test.js`
 - Add custom sounds by placing MP3 files in the `sounds/` directory and updating `AVAILABLE_SOUNDS` in `shared.js`.
 
 ## Notes
@@ -57,3 +58,5 @@ Default pomodoro templates:
 - Popup start attempts to seed the active tab's URL when available.
 - `shared.js` runs inside an IIFE to avoid global const collisions across extension contexts.
 - `content.js` and `popup.js` are wrapped in IIFEs to prevent redeclaration errors if scripts are injected more than once.
+- Day-based stats keys use local calendar dates (`YYYY-MM-DD`) instead of UTC boundaries.
+- Segment advancement is serialized in the service worker to avoid double transitions from concurrent alarms/messages.
